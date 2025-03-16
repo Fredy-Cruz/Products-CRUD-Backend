@@ -17,10 +17,12 @@ class Product extends Model
      *
      * @var list<string>
      */
+
     protected $fillable = [
         'name',
         'description',
         'unit-price',
         'stock',
+        'disabled'
     ];
 }
