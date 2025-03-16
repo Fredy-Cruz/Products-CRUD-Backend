@@ -39,8 +39,14 @@ class ProductsController extends Controller
             ], 400);
         }
 
-        //Creating a new product
-        $product = Product::create($request->all());
+        //Creating a new product (Made this way so can't disable a product when creating it)
+        $product = new Product();
+        $product->name = $request->name;
+        $product->description = $request->description;
+        $product->unit_price = $request->unit_price;
+        $product->stock = $request->stock;
+        $product->disabled = false;
+        $product->save();
 
         return response()->json([
             'message' => 'Store a new product',
@@ -98,20 +104,96 @@ class ProductsController extends Controller
         if($request->unit_price)
         	$product->unit_price = $request->unit_price;
         $product->save();
-        
+
         return response()->json([
             'message' => 'Product updated',
             'data' => $product
         ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(int $id)
+    //Updating a product's stock.
+    public function addStock(Request $request, string $id)
     {
-        $product = Product::find($id);
-        $product->delete();
+        $product = Product::where('id', $id)->where('disabled', false)->first();
+        //Validate if the product exists and is not disabled
+        if(!$product){
+            return response()->json([
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        //Validating the request
+        $validator = Validator::make($request->all(),[
+            'update' => 'required | integer | gte:0 | lte:1000'
+        ]);
+        
+        if($validator->fails()){
+            return response()->json([
+                "message" => "Invalid request"
+            ], 400);
+        }
+
+        //Updating the product's stock
+        $product->stock += $request->update;
+        $product->save();
+
+        return response()->json([
+            'message' => 'Stock updated',
+            'data' => $product
+        ], 200);
+    }
+
+    public function subtractStock(Request $request, string $id)
+    {
+        $product = Product::where('id', $id)->where('disabled', false)->first();
+        //Validate if the product exists and is not disabled
+        if(!$product){
+            return response()->json([
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        //Validating the request
+        $validator = Validator::make($request->all(),[
+            'update' => 'required | integer | gte:0 | lte:1000'
+        ]);
+        
+        if($validator->fails()){
+            return response()->json([
+                "message" => "Invalid request"
+            ], 400);
+        }
+        //Validate if there is enough stock
+        if($request->update > $product->stock){
+            return response()->json([
+                "message" => "Not enough stock"
+            ], 200);
+        }
+
+        //Updating the product's stock
+        $product->stock -= $request->update;
+        $product->save();
+
+        return response()->json([
+            'message' => 'Stock updated',
+            'data' => $product
+        ], 200);
+    }
+
+    //Disable the specified product.
+    public function destroy(string $id)
+    {
+        $product = Product::where('id', $id)->where('disabled', false)->first();
+        //Validate if the product exists and is not disabled
+        if(!$product){
+            return response()->json([
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        //Disabling the product
+        $product->disabled = true;
+        $product->save();
 
         return response()->json([
             'message' => 'Delete a product',

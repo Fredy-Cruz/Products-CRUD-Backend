@@ -23,6 +23,15 @@ class Product extends Model
         'description',
         'unit_price',
         'stock',
+        'disabled',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
         'disabled'
     ];
 }
