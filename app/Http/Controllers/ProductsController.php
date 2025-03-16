@@ -29,7 +29,7 @@ class ProductsController extends Controller
         $validator = Validator::make($request->all(),[
             'name' => 'required | min:2 | max:90',
             'description' => 'required | min:10 | max:255',
-            'unit-price' => 'required | decimal:0,2 | gte:0.01 | lte:2000.00',
+            'unit_price' => 'required | decimal:0,2 | gte:0.01 | lte:2000.00',
             'stock' => 'required | integer | gte:0 | lte:1000'
         ]);
 
@@ -54,7 +54,7 @@ class ProductsController extends Controller
     {
         $product = Product::where('id', $id)->where('disabled', false)->first();
         //Validate if the product exists and is not disabled
-        if($product == null){
+        if(!$product){
             return response()->json([
                 'message' => 'Product not found'
             ], 404);
@@ -66,13 +66,41 @@ class ProductsController extends Controller
         }
     }
 
-    //Update the specified resource in storage.
-    public function update(Request $request, int $id)
+    //Update an specified product.
+    public function update(Request $request, string $id)
     {
-        $product = Product::find($id);
-        $product->update($request->all());
+        $product = Product::where('id', $id)->where('disabled', false)->first();
+        //Validate if the product exists and is not disabled
+        if(!$product){
+            return response()->json([
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        //Validating the request
+        $validator = Validator::make($request->all(),[
+            'name' => ' min:2 | max:90',
+            'description' => 'min:10 | max:255',
+            'unit_price' => 'decimal:0,2 | gte:0.01 | lte:2000.00'
+        ]);
+        
+        if($validator->fails() || !($request->all())){
+            return response()->json([
+                "message" => "Invalid request"
+            ], 400);
+        }
+
+        //Updating the product
+        if($request->name)
+        	$product->name = $request->name;
+        if($request->description)
+        	$product->description = $request->description;
+        if($request->unit_price)
+        	$product->unit_price = $request->unit_price;
+        $product->save();
+        
         return response()->json([
-            'message' => 'Update a product',
+            'message' => 'Product updated',
             'data' => $product
         ], 200);
     }
